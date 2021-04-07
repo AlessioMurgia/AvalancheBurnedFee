@@ -44,7 +44,7 @@ async function InsertBalance(totalbalance, lastblock){
 }
 
 //routing function
-async function stuff() {
+async function LiveStreamBlockFunc() {
 
     if(!once)
     {
@@ -168,7 +168,7 @@ async function stuff() {
     else {}
 
     //set timer routine
-    setTimeout(function() { stuff(); }, 500);
+    setTimeout(function() { LiveStreamBlockFunc(); }, 500);
 }
 
-stuff();
+LiveStreamBlockFunc();
