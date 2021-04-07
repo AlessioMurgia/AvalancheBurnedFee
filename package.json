@@ -1,0 +1,10 @@
+{
+  "name": "Lavoro",
+  "version": "1.0.0",
+  "dependencies": {
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "mongodb": "^3.6.5"
+  }
+}
