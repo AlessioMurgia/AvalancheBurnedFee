@@ -1,6 +1,9 @@
 const fetch = require("node-fetch");
 const myHeaders = new fetch.Headers();
 const {MongoClient} = require('mongodb');
+const fs = require('fs')
+const lineReader = require('line-reader');
+
 
 //headers list
 myHeaders.append("Content-Type", "application/json");
@@ -11,12 +14,20 @@ let LastBlockGathered;
 
 //mongodb only one client connection
 var once = false;
+let i;
 
 //define uri mongodb cluster
 const uri = "mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 
 //define client mongodb
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+//create persistent files
+fs.writeFile('Outputstops.txt','',(err) => {
+
+    // In case of a error throw err.
+    if (err) throw err;
+});
 
 //insert block in db function
 async function InsertBlock(block){
