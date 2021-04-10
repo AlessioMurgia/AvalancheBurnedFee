@@ -19,9 +19,11 @@ var FirstBlockGathered;
 var stops = [];
 var starts = [];
 
-//write first block only once
+//working in first iteration only
 var oncestart = false;
 var oncestop = false;
+
+//write first block only once
 var once2 = false;
 
 //mongodb only one client connection
@@ -34,40 +36,38 @@ const uri = "mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirs
 //define client mongodb
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
+//writefile function
+function WriteFile(filename, array){
+    for (i = 0; i < array.length; i++) {
+        fs.appendFile(filename, array[i] + '\n', (err) => {
+
+            // In case of a error throw err.
+            if (err) throw err;
+        })
+    }
+}
 
 //getstops func for persistence
 function getstops(lastblock){
+    //checking if file is empty
     fs.readFile("Outputstops.txt", (err, file) => {
         if (file.length === 0) {
             oncestop=true;
             stops.push('0',lastblock);
+            WriteFile('Outputstops.txt', stops);
 
-            for (i = 0; i < stops.length; i++) {
-                fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
-
-                    // In case of a error throw err.
-                    if (err) throw err;
-                })
-            }
         } else {
             if(!oncestop) {
                 oncestop = true;
-
                 lineReader.eachLine('Outputstops.txt', function (line) {
                     stops.push(line);
                 });
-
                 setTimeout(function () {
                     stops.push(lastblock);
                     fs.unlink('Outputstops.txt', function (err) {
                         if (err) throw err;
                     });
-                    for (i = 0; i < stops.length; i++) {
-                        fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
-                            // In case of a error throw err.
-                            if (err) throw err;
-                        })
-                    }
+                    WriteFile('Outputstops.txt', stops);
                 }, 50);
             }
             else{
@@ -76,17 +76,11 @@ function getstops(lastblock){
                     fs.unlink('Outputstops.txt', function (err) {
                         if (err) throw err;
                     });
-                    for (i = 0; i < stops.length; i++) {
-                        fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
-                            // In case of a error throw err.
-                            if (err) throw err;
-                        })
-                    }
+                    WriteFile('Outputstops.txt', stops);
                 }, 50);
             }
         }
     })
-    //setTimeout(function (){console.log(stops)}, 75);
 }
 
 //getstart func persistence
@@ -95,40 +89,24 @@ function getstarts(firstblock){
         if (file.length === 0) {
             oncestart = true;
             starts.push(firstblock);
-            for (i = 0; i < starts.length; i++) {
-                fs.appendFile('Outputstarts.txt', starts[i] + '\n', (err) => {
-
-                    // In case of a error throw err.
-                    if (err) throw err;
-                })
-            }
+            WriteFile('Outputstarts.txt', starts);
         } else {
             if(!oncestart) {
                 oncestart = true;
-
                 lineReader.eachLine('Outputstarts.txt', function (line) {
                     starts.push(line);
                 });
-
                 setTimeout(function () {
                     starts.push(firstblock);
                     fs.unlink('Outputstarts.txt', function (err) {
                         if (err) throw err;
-                        console.log('File deleted!');
                     });
-                    for (i = 0; i < starts.length; i++) {
-                        fs.appendFile('Outputstarts.txt', starts[i] + '\n', (err) => {
-
-                            // In case of a error throw err.
-                            if (err) throw err;
-                        })
-                    }
+                    WriteFile('Outputstarts.txt', starts)
                 }, 50);
             }
             else{}
         }
     })
-    //setTimeout(function (){console.log(starts)}, 75);
 }
 
 //insert block in db function
@@ -293,7 +271,7 @@ async function LiveStreamBlockFunc() {
     else {}
 
     //set timer routine
-    setTimeout(function() { LiveStreamBlockFunc(); }, 500);
+    setTimeout(function() { LiveStreamBlockFunc(); }, 400);
 }
 
 LiveStreamBlockFunc();
