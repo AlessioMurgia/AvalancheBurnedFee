@@ -5,14 +5,18 @@ const lineReader = require('line-reader');
 
 let i;
 var FirstBlock = '100'
-var LastBlock = '200'
+var LastBlock = '102'
 var stops = [];
 var starts = [];
+var oncestart = true;
+var oncestop = true;
+
 
 function getstops(){
         fs.readFile("Outputstops.txt", (err, file) => {
             if (file.length === 0) {
-                stops.push('0', LastBlock);
+                stops.push('0',LastBlock);
+
                 for (i = 0; i < stops.length; i++) {
                     fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
 
@@ -24,21 +28,38 @@ function getstops(){
                 lineReader.eachLine('Outputstops.txt', function (line) {
                     stops.push(line);
                 });
-                setTimeout(function (){
-                    stops.push(LastBlock);
+                if(!oncestop) {
+                    setTimeout(function () {
+                        stops.push(LastBlock);
 
-                    fs.unlink('Outputstops.txt', function (err) {
-                        if (err) throw err;
-                        console.log('File deleted!');
-                    });
-                    for(i=0;i<stops.length;i++)
-                    {
-                        fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
-                            // In case of a error throw err.
+                        fs.unlink('Outputstops.txt', function (err) {
                             if (err) throw err;
-                        })
-                    }
+                            console.log('File deleted!');
+                        });
+                        for (i = 0; i < stops.length; i++) {
+                            fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
+                                // In case of a error throw err.
+                                if (err) throw err;
+                            })
+                        }
                     }, 50);
+                }
+                else{
+                    setTimeout(function () {
+                        stops[stops.length-1] = LastBlock;
+
+                        fs.unlink('Outputstops.txt', function (err) {
+                            if (err) throw err;
+                            console.log('File deleted!');
+                        });
+                        for (i = 0; i < stops.length; i++) {
+                            fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
+                                // In case of a error throw err.
+                                if (err) throw err;
+                            })
+                        }
+                    }, 50);
+                }
             }
         })
     setTimeout(function (){console.log(stops)}, 100);
@@ -59,21 +80,22 @@ function getstarts(){
             lineReader.eachLine('Outputstarts.txt', function (line) {
                 starts.push(line);
             });
-            setTimeout(function (){
-                starts.push(FirstBlock);
-                fs.unlink('Outputstarts.txt', function (err) {
-                    if (err) throw err;
-                    console.log('File deleted!');
-                });
-                for(i=0;i<starts.length;i++)
-                {
-                    fs.appendFile('Outputstarts.txt', starts[i] + '\n', (err) => {
-
-                        // In case of a error throw err.
+            if(!oncestart) {
+                setTimeout(function () {
+                    starts.push(FirstBlock);
+                    fs.unlink('Outputstarts.txt', function (err) {
                         if (err) throw err;
-                    })
-                }
-            }, 50);
+                        console.log('File deleted!');
+                    });
+                    for (i = 0; i < starts.length; i++) {
+                        fs.appendFile('Outputstarts.txt', starts[i] + '\n', (err) => {
+
+                            // In case of a error throw err.
+                            if (err) throw err;
+                        })
+                    }
+                }, 50);
+            }
         }
     })
     setTimeout(function (){console.log(starts)}, 100);

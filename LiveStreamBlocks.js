@@ -12,8 +12,20 @@ myHeaders.append("Cookie", "__cfduid=dc54cddb51676178e2e860c64b93b8b0d1616974601
 //last block gathered
 let LastBlockGathered;
 
+//first block gathered
+var FirstBlockGathered;
+
+//arrays for writing in persistence
+var stops = [];
+var starts = [];
+
+//write first block only once
+var oncestart = false;
+var oncestop = false;
+var once2 = false;
+
 //mongodb only one client connection
-var once = false;
+var onceMongo = false;
 let i;
 
 //define uri mongodb cluster
@@ -22,12 +34,102 @@ const uri = "mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirs
 //define client mongodb
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-//create persistent files
-fs.writeFile('Outputstops.txt','',(err) => {
 
-    // In case of a error throw err.
-    if (err) throw err;
-});
+//getstops func for persistence
+function getstops(lastblock){
+    fs.readFile("Outputstops.txt", (err, file) => {
+        if (file.length === 0) {
+            oncestop=true;
+            stops.push('0',lastblock);
+
+            for (i = 0; i < stops.length; i++) {
+                fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
+
+                    // In case of a error throw err.
+                    if (err) throw err;
+                })
+            }
+        } else {
+            if(!oncestop) {
+                oncestop = true;
+
+                lineReader.eachLine('Outputstops.txt', function (line) {
+                    stops.push(line);
+                });
+
+                setTimeout(function () {
+                    stops.push(lastblock);
+                    fs.unlink('Outputstops.txt', function (err) {
+                        if (err) throw err;
+                    });
+                    for (i = 0; i < stops.length; i++) {
+                        fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
+                            // In case of a error throw err.
+                            if (err) throw err;
+                        })
+                    }
+                }, 50);
+            }
+            else{
+                setTimeout(function () {
+                    stops[stops.length-1] = lastblock;
+                    fs.unlink('Outputstops.txt', function (err) {
+                        if (err) throw err;
+                    });
+                    for (i = 0; i < stops.length; i++) {
+                        fs.appendFile('Outputstops.txt', stops[i] + '\n', (err) => {
+                            // In case of a error throw err.
+                            if (err) throw err;
+                        })
+                    }
+                }, 50);
+            }
+        }
+    })
+    //setTimeout(function (){console.log(stops)}, 75);
+}
+
+//getstart func persistence
+function getstarts(firstblock){
+    fs.readFile("Outputstarts.txt", (err, file) => {
+        if (file.length === 0) {
+            oncestart = true;
+            starts.push(firstblock);
+            for (i = 0; i < starts.length; i++) {
+                fs.appendFile('Outputstarts.txt', starts[i] + '\n', (err) => {
+
+                    // In case of a error throw err.
+                    if (err) throw err;
+                })
+            }
+        } else {
+            if(!oncestart) {
+                oncestart = true;
+
+                lineReader.eachLine('Outputstarts.txt', function (line) {
+                    starts.push(line);
+                });
+
+                setTimeout(function () {
+                    starts.push(firstblock);
+                    fs.unlink('Outputstarts.txt', function (err) {
+                        if (err) throw err;
+                        console.log('File deleted!');
+                    });
+                    for (i = 0; i < starts.length; i++) {
+                        fs.appendFile('Outputstarts.txt', starts[i] + '\n', (err) => {
+
+                            // In case of a error throw err.
+                            if (err) throw err;
+                        })
+                    }
+                }, 50);
+            }
+            else{}
+        }
+    })
+    //setTimeout(function (){console.log(starts)}, 75);
+}
 
 //insert block in db function
 async function InsertBlock(block){
@@ -57,10 +159,10 @@ async function InsertBalance(totalbalance, lastblock){
 //routing function
 async function LiveStreamBlockFunc() {
 
-    if(!once)
+    if(!onceMongo)
     {
         await client.connect();
-        once = true;
+        onceMongo = true;
     }
 
     //raw var body
@@ -90,7 +192,6 @@ async function LiveStreamBlockFunc() {
     //fetching last block
     async function fetchBlock(options){
         try {
-
             const response = await fetch("https://api.avax.network/ext/bc/C/rpc", options);
             return await response.json();
         } catch (error) {
@@ -126,12 +227,23 @@ async function LiveStreamBlockFunc() {
     const last_block = await LastBlockNumber(RequestOptionsLastBlockNumber);
     const total_balance = await TotalFeeBurned(requestOptionsTotalBalance);
 
+    if(!once2)
+    {
+        FirstBlockGathered = last_block;
+        once2 = true;
+    }
+
     //new blocks filter
     if(LastBlockGathered !== last_block)
     {
         LastBlockGathered = last_block;
         console.log(" ");
         console.log("Block height: " + parseInt(last_block, 16));
+
+        getstarts(FirstBlockGathered);
+
+        getstops(LastBlockGathered);
+
 
         //raw body fee burned per block
         var RawFeeBurnedPerBlock = JSON.stringify({
@@ -171,6 +283,8 @@ async function LiveStreamBlockFunc() {
         await (async () => {
             const gas_used = await FeeBurnedPerBlock(RequestOptionsFeeBurnedPerBlock);
             console.log("Burned fee: " + parseInt(gas_used.gasUsed) * 0.00000047 * 0.001 + " Avax");
+
+
         })();
 
         //total fee burned
