@@ -1,9 +1,6 @@
 const fetch = require("node-fetch");
 const myHeaders = new fetch.Headers();
 const {MongoClient} = require('mongodb');
-const fs = require('fs')
-const lineReader = require('line-reader');
-
 
 //headers list
 myHeaders.append("Content-Type", "application/json");
@@ -15,20 +12,14 @@ let LastBlockGathered;
 //first block gathered
 var FirstBlockGathered;
 
-//arrays for writing in persistence
-var stops = [];
-var starts = [];
-
 //working in first iteration only
-var oncestart = false;
-var oncestop = false;
+let oncepersistence = false;
 
 //write first block only once
 var once2 = false;
 
 //mongodb only one client connection
 var onceMongo = false;
-let i;
 
 //define uri mongodb cluster
 const uri = "mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
@@ -36,77 +27,46 @@ const uri = "mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirs
 //define client mongodb
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-//writefile function
-function WriteFile(filename, array){
-    for (i = 0; i < array.length; i++) {
-        fs.appendFile(filename, array[i] + '\n', (err) => {
-
-            // In case of a error throw err.
-            if (err) throw err;
-        })
+//persistence updater
+async function updatepersistence(persistence_db, lBlock){
+    try{
+        const filter = {starts: null};
+        const update = { $set: {stops: parseInt(lBlock, 16)}};
+        await persistence_db.updateOne(filter, update);
+    }
+    catch (e)
+    {
+        console.error(e);
     }
 }
 
-//getstops func for persistence
-function getstops(lastblock){
-    //checking if file is empty
-    fs.readFile("Outputstops.txt", (err, file) => {
-        if (file.length === 0) {
-            oncestop=true;
-            stops.push('0',lastblock);
-            WriteFile('Outputstops.txt', stops);
+//persistence manager
+async function PersistenceManager(fBlock, lBlock){
+    try{
+        const database = client.db('BlocksDB');
+        const persistence_db = database.collection('persistencebootstrap');
 
-        } else {
-            if(!oncestop) {
-                oncestop = true;
-                lineReader.eachLine('Outputstops.txt', function (line) {
-                    stops.push(line);
-                });
-                setTimeout(function () {
-                    stops.push(lastblock);
-                    fs.unlink('Outputstops.txt', function (err) {
-                        if (err) throw err;
-                    });
-                    WriteFile('Outputstops.txt', stops);
-                }, 50);
+        if(await persistence_db.countDocuments() === 0){
+            oncepersistence = true;
+            await persistence_db.insertOne({starts: parseInt(fBlock, 16), stops: 0});
+            await persistence_db.insertOne({starts: null, stops: parseInt(lBlock, 16)});
+        }
+        else {
+            if(!oncepersistence) {
+                oncepersistence = true;
+                const filter = {starts: null};
+                const update = {$set: {starts: parseInt(fBlock, 16)}};
+                await persistence_db.updateOne(filter, update);
+                await persistence_db.insertOne({starts: null, stops:parseInt(lBlock, 16)});
             }
-            else{
-                setTimeout(function () {
-                    stops[stops.length-1] = lastblock;
-                    fs.unlink('Outputstops.txt', function (err) {
-                        if (err) throw err;
-                    });
-                    WriteFile('Outputstops.txt', stops);
-                }, 50);
+            else {
+                await updatepersistence(persistence_db, lBlock);
             }
         }
-    })
-}
-
-//getstart func persistence
-function getstarts(firstblock){
-    fs.readFile("Outputstarts.txt", (err, file) => {
-        if (file.length === 0) {
-            oncestart = true;
-            starts.push(firstblock);
-            WriteFile('Outputstarts.txt', starts);
-        } else {
-            if(!oncestart) {
-                oncestart = true;
-                lineReader.eachLine('Outputstarts.txt', function (line) {
-                    starts.push(line);
-                });
-                setTimeout(function () {
-                    starts.push(firstblock);
-                    fs.unlink('Outputstarts.txt', function (err) {
-                        if (err) throw err;
-                    });
-                    WriteFile('Outputstarts.txt', starts)
-                }, 50);
-            }
-            else{}
-        }
-    })
+    }
+    catch (e) {
+        console.error(e);
+    }
 }
 
 //insert block in db function
@@ -218,10 +178,7 @@ async function LiveStreamBlockFunc() {
         console.log(" ");
         console.log("Block height: " + parseInt(last_block, 16));
 
-        getstarts(FirstBlockGathered);
-
-        getstops(LastBlockGathered);
-
+        await PersistenceManager(FirstBlockGathered, LastBlockGathered);
 
         //raw body fee burned per block
         var RawFeeBurnedPerBlock = JSON.stringify({
@@ -256,13 +213,10 @@ async function LiveStreamBlockFunc() {
             return blockDescription.result;
         }
 
-
         //Fee burned per block call
         await (async () => {
             const gas_used = await FeeBurnedPerBlock(RequestOptionsFeeBurnedPerBlock);
             console.log("Burned fee: " + parseInt(gas_used.gasUsed) * 0.00000047 * 0.001 + " Avax");
-
-
         })();
 
         //total fee burned
