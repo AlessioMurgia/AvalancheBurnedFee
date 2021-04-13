@@ -10,16 +10,13 @@ myHeaders.append("Cookie", "__cfduid=dc54cddb51676178e2e860c64b93b8b0d1616974601
 let LastBlockGathered;
 
 //first block gathered
-var FirstBlockGathered;
+let FirstBlockGathered;
 
 //working in first iteration only
 let oncepersistence = false;
 
 //write first block only once
-var once2 = false;
-
-//mongodb only one client connection
-var onceMongo = false;
+let once2 = false;
 
 //define uri mongodb cluster
 const uri = "mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
@@ -28,7 +25,7 @@ const uri = "mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirs
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 //persistence updater
-async function updatepersistence(persistence_db, lBlock){
+async function UpdatePersistence(persistence_db, lBlock){
     try{
         const filter = {starts: null};
         const update = { $set: {stops: parseInt(lBlock, 16)}};
@@ -60,7 +57,7 @@ async function PersistenceManager(fBlock, lBlock){
                 await persistence_db.insertOne({starts: null, stops:parseInt(lBlock, 16)});
             }
             else {
-                await updatepersistence(persistence_db, lBlock);
+                await UpdatePersistence(persistence_db, lBlock);
             }
         }
     }
@@ -94,17 +91,33 @@ async function InsertBalance(totalbalance, lastblock){
     }
 }
 
-//routing function
-async function LiveStreamBlockFunc() {
+//fetching last block
+async function fetchBlock(){
 
-    if(!onceMongo)
-    {
-        await client.connect();
-        onceMongo = true;
+    //raw var body request
+    const RawLastBlockNumber = JSON.stringify({"jsonrpc": "2.0", "method": "eth_blockNumber", "params": [], "id": 1});
+
+    //block height request
+    const RequestOptionsLastBlockNumber = {
+        method: 'POST',
+        headers: myHeaders,
+        body: RawLastBlockNumber,
+        redirect: 'follow'
+    };
+
+    try {
+        const response = await fetch("https://api.avax.network/ext/bc/C/rpc", RequestOptionsLastBlockNumber);
+        const nBlocco = await response.json();
+        return nBlocco.result;
+    } catch (error) {
+        console.error(error);
     }
 
-    //raw var body
-    const RawLastBlockNumber = JSON.stringify({"jsonrpc": "2.0", "method": "eth_blockNumber", "params": [], "id": 1});
+}
+
+//fetching total fee burned
+async function fetchTotalFeeBurned(){
+    //raw total balance burned request body
     const rawGetTotalBalance = JSON.stringify({
         "jsonrpc": "2.0",
         "method": "eth_getBalance",
@@ -112,58 +125,62 @@ async function LiveStreamBlockFunc() {
         "id": 1
     });
 
-    //request block height
-    const RequestOptionsLastBlockNumber = {
-        method: 'POST',
-        headers: myHeaders,
-        body: RawLastBlockNumber,
-        redirect: 'follow'
-    };
-    //request for total balance
+    //total balance request
     const requestOptionsTotalBalance = {
         method: 'POST',
         headers: myHeaders,
         body: rawGetTotalBalance,
         redirect: 'follow'
     };
-
-    //fetching last block
-    async function fetchBlock(options){
-        try {
-            const response = await fetch("https://api.avax.network/ext/bc/C/rpc", options);
-            return await response.json();
-        } catch (error) {
-            console.error(error);
-        }
-
+    try {
+        const response = await fetch("https://api.avax.network/ext/bc/C/rpc", requestOptionsTotalBalance);
+        const totalbalance = await response.json();
+        return totalbalance.result;
+    } catch (error) {
+        console.error(error);
     }
+}
 
-    //last block call function
-    async function LastBlockNumber(options) {
-        const nBlocco = await fetchBlock(options);
-        return nBlocco.result;
+//fee burned per block fetch
+async function fetchFeeBurnedPerBlock() {
 
+    //raw body fee burned per block
+    const RawFeeBurnedPerBlock = JSON.stringify({
+        "jsonrpc": "2.0",
+        "method": "eth_getBlockByNumber",
+        "params": [LastBlockGathered, true],
+        "id": 1
+    });
+
+    //var for request fee burned per block
+    const RequestOptionsFeeBurnedPerBlock = {
+        method: 'POST',
+        headers: myHeaders,
+        body: RawFeeBurnedPerBlock,
+        redirect: 'follow'
+    };
+
+    try {
+        const response = await fetch("https://api.avax.network/ext/bc/C/rpc", RequestOptionsFeeBurnedPerBlock);
+        const blockDescription = await response.json();
+        await InsertBlock(blockDescription);
+        return blockDescription.result;
+    } catch (error) {
+        console.error(error);
     }
+}
 
-    //fetching total fee burned
-    async function fetchTotalFeeBurned(options){
-        try {
-            const response = await fetch("https://api.avax.network/ext/bc/C/rpc", options);
-            return await response.json();
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    //total fee burned call function
-    async function TotalFeeBurned(options) {
-        const totalBalance = await fetchTotalFeeBurned(options);
-        return totalBalance.result;
+//////////////////////////////// routine function /////////////////////////////////////
+async function LiveStreamBlockFunc() {
+    //check if db is connected
+    if(!client.isConnected())
+    {
+        await client.connect();
     }
 
     //awaiting previous responses
-    const last_block = await LastBlockNumber(RequestOptionsLastBlockNumber);
-    const total_balance = await TotalFeeBurned(requestOptionsTotalBalance);
+    const last_block = await fetchBlock();
+    const total_balance = await fetchTotalFeeBurned();
 
     if(!once2)
     {
@@ -178,54 +195,21 @@ async function LiveStreamBlockFunc() {
         console.log(" ");
         console.log("Block height: " + parseInt(last_block, 16));
 
+        //call persistence manager
         await PersistenceManager(FirstBlockGathered, LastBlockGathered);
 
-        //raw body fee burned per block
-        var RawFeeBurnedPerBlock = JSON.stringify({
-            "jsonrpc": "2.0",
-            "method": "eth_getBlockByNumber",
-            "params": [last_block, true],
-            "id": 1
-        });
-
-        //var for request fee burned per block
-        var RequestOptionsFeeBurnedPerBlock = {
-            method: 'POST',
-            headers: myHeaders,
-            body: RawFeeBurnedPerBlock,
-            redirect: 'follow'
-        };
-
-        //fee burned per block fetch
-        async function fetchFeeBurnedPerBlock(options) {
-            try {
-                const response = await fetch("https://api.avax.network/ext/bc/C/rpc", options);
-                return await response.json();
-            } catch (error) {
-                console.error(error);
-            }
-        }
-
-        //fee burned per block function
-        async function FeeBurnedPerBlock(options) {
-            const blockDescription = await fetchFeeBurnedPerBlock(options);
-            await InsertBlock(blockDescription);
-            return blockDescription.result;
-        }
-
         //Fee burned per block call
-        await (async () => {
-            const gas_used = await FeeBurnedPerBlock(RequestOptionsFeeBurnedPerBlock);
-            console.log("Burned fee: " + parseInt(gas_used.gasUsed) * 0.00000047 * 0.001 + " Avax");
-        })();
+        const gas_used = await fetchFeeBurnedPerBlock();
 
-        //total fee burned
-        InsertBalance(total_balance, LastBlockGathered).then(()=> console.log("Total burned: " + parseInt(total_balance, 16)*10**-9*0.00000000047 + " Avax"));
-    }
-    else {}
+        // noinspection JSUnresolvedVariable
+        console.log("Burned fee: " + parseInt(gas_used.gasUsed) * 0.00000047 * 0.001 + " Avax");
+
+        //insert in mongodb
+        await InsertBalance(total_balance, LastBlockGathered).then(()=> console.log("Total burned: " + parseInt(total_balance, 16)*10**-9*0.00000000047 + " Avax"));
+    } else {}
 
     //set timer routine
-    setTimeout(function() { LiveStreamBlockFunc(); }, 400);
+    setTimeout(() => LiveStreamBlockFunc(), 200);
 }
 
-LiveStreamBlockFunc();
+LiveStreamBlockFunc().catch(e => console.log(e));
