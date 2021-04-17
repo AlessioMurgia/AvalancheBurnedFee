@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <%- include('templates.ejs') %>
+        <link rel="stylesheet" href="/templates/style.css">
+</head>
+<body>
+<h1>Total fee burned</h1>
+<h2><%- parseInt(totalburned.balance, 16)*10**-18 + " Avax" %></h2>
+<dl>
+
+    <% blocks.forEach(function (block){ %>
+
+        <dt><strong>Block <%= parseInt(block.block.number, 16) %></strong>
+
+                <dd><strong>Gas burned: </strong><%= parseInt(block.block.gasUsed, 16)* 0.000000225 + " Avax" %> </dd>
+                <dd><strong>Gas used: </strong><%= parseInt(block.block.gasUsed, 16)  + " Gas" %></dd>
+        </dt>
+
+    <% }); %>
+
+</dl>
+</body>
+</html>

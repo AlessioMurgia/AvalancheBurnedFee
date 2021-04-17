@@ -1,0 +1,25 @@
+h1 {
+    font-family: Verdana, serif;
+    text-align: center;
+    font-size: xxx-large;
+}
+
+h2 {
+    font-family: Verdana, serif;
+    text-align: center;
+    font-size: xx-large;
+}
+
+body {
+    background-color: gray;
+    font-family: Verdana, serif;
+    text-align: center;
+    font-size: large;
+}
+dl {
+    font-size: xx-large;
+}
+
+dd{
+    font-size: large;
+}

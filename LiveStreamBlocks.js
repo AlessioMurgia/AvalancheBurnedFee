@@ -72,7 +72,7 @@ async function InsertBlock(block){
         // Connect to the MongoDB cluster
         const database = client.db('BlocksDB');
         const blocks_db = database.collection('blocks');
-        await blocks_db.insertOne(block)
+        await blocks_db.insertOne({block: block.result});
 
     } catch (e) {
         console.error(e);
@@ -202,10 +202,10 @@ async function LiveStreamBlockFunc() {
         const gas_used = await fetchFeeBurnedPerBlock();
 
         // noinspection JSUnresolvedVariable
-        console.log("Burned fee: " + parseInt(gas_used.gasUsed) * 0.00000047 * 0.001 + " Avax");
+        console.log("Burned fee: " + parseInt(gas_used.gasUsed) * 0.000000225 + " Avax");
 
         //insert in mongodb
-        await InsertBalance(total_balance, LastBlockGathered).then(()=> console.log("Total burned: " + parseInt(total_balance, 16)*10**-9*0.00000000047 + " Avax"));
+        await InsertBalance(total_balance, LastBlockGathered).then(()=> console.log("Total burned: " + parseInt(total_balance, 16)*10**-18 + " Avax"));
     } else {}
 
     //set timer routine
