@@ -1,9 +1,7 @@
 const fastify = require('fastify')()
 const resolve = require('path').resolve
 const {MongoClient} = require('mongodb');
-const path = require('path')
-
-
+const path = require('path');
 
 const uri = "mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -20,7 +18,6 @@ fastify.register(require('point-of-view'), {
     prefix: '/templates/',
 })
 
-
 fastify.get('/', async (req, reply) => {
     const database = client.db('BlocksDB');
     const blocks_db = database.collection('blocks');
@@ -31,7 +28,6 @@ fastify.get('/', async (req, reply) => {
 
     return reply.view('index.ejs', {blocks: block_list, totalburned: total_balance});
 })
-
 
 client.connect(function () {
     console.log('connected to mongo');
