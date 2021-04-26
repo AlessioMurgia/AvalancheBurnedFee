@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('templates.ejs') %>
+    <link rel="stylesheet" href="/templates/style.css">
+</head>
+<body>
+<h3><a href="/">Live stream blocks   </a></h3>
+<h1>Temporal aggregation</h1>
+<dl>
+    <dt><strong>Burned last hour</strong></dt>
+    <dd><strong><%= last_h* 0.000000225 + ' Avax' %></strong></dd>
+
+    <dt><strong>Burned last 24h</strong></dt>
+    <dd><strong><%= last_d* 0.000000225 + ' Avax' %></strong></dd>
+
+    <dt><strong>Burned last week</strong></dt>
+    <dd><strong><%= last_w* 0.000000225 + ' Avax' %></strong></dd>
+
+    <dt><strong>Burned last month</strong></dt>
+    <dd><strong><%= last_4w* 0.000000225 + ' Avax' %></strong></dd>
+
+</dl>
+</body>
+</html>

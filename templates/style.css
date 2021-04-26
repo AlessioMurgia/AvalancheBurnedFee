@@ -10,6 +10,12 @@ h2 {
     font-size: xx-large;
 }
 
+h3 {
+    font-family: Verdana, serif;
+    text-align: left;
+    font-size: medium;
+}
+
 body {
     background-color: gray;
     font-family: Verdana, serif;

@@ -14,7 +14,7 @@ async function InsertBlock (block) {
 
     const database = client.db('BlocksDB')
     const blocks_db = database.collection('blocks')
-    await blocks_db.insertOne({ block: block })
+    await blocks_db.insertOne({ block: block, decimalGasUsed: parseInt(block.gasUsed, 16), createdAt: new Date(Date.now()) })
   } catch (e) {
     console.error(e)
   }

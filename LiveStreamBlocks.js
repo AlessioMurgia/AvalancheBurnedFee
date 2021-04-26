@@ -11,7 +11,7 @@ let FirstBlockGathered
 // write first block only once
 let once2 = false
 
-/// ///////////////////////////// routine function /////////////////////////////////////
+//////////////////////////////// routine function /////////////////////////////////////
 async function LiveStreamBlockFunc () {
   // awaiting previous responses
   const last_block = await fetch_handler.fetchBlock()
