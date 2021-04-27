@@ -1,6 +1,7 @@
 const fetch_handler = require('./functions/fetch_handler')
 const db_handler = require('./functions/db_handler')
 const persistence_handler = require('./functions/persistence_handler')
+const redis_server = require('./redis_manager')
 
 // last block gathered
 let LastBlockGathered
@@ -42,6 +43,9 @@ async function LiveStreamBlockFunc () {
 
     // insert in mongodb
     await db_handler.InsertBalance(total_balance, LastBlockGathered).then(() => console.log('Total burned: ' + parseInt(total_balance, 16) * 10 ** -18 + ' Avax'))
+
+    await redis_server.redis_manager();
+
   } else {}
 
   // set timer routine
