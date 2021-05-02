@@ -7,7 +7,7 @@
 <body>
 <h3><a href="/aggregation">Temporal aggregations   </a></h3>
 <h1>Total fee burned</h1>
-<h2><%- parseInt(totalburned.balance, 16)*10**-18 + " Avax" %></h2>
+<h2><%- parseInt(totalBurned[0].balance, 16)*10**-18 + " Avax" %></h2>
 <dl>
 
     <% blocks.forEach(function (block){ %>

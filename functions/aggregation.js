@@ -1,30 +1,31 @@
 const { MongoClient } = require('mongodb')
+const connectionString = require('../connection-string')
 
-const uri = 'mongodb+srv://alessio:passwordprova12@avax.zjxwn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+const client = new MongoClient(connectionString.uri, { useNewUrlParser: true, useUnifiedTopology: true })
 
-async function aggregateLastHour(){
+async function aggregateLastHour () {
   try {
-    if(!client.isConnected()){await client.connect()}
+    if (!client.isConnected()) { await client.connect() }
     const database = client.db('BlocksDB')
-    const blocks_db = database.collection('blocks')
+    const blocksDb = database.collection('blocks')
 
-    let lastHour = new Date();
-    lastHour.setHours(lastHour.getHours()-24);
+    const lastHour = new Date()
+    lastHour.setHours(lastHour.getHours() - 24)
 
-    return await blocks_db.aggregate([
-      { $match: {
-        createdAt: {
-          $gt: lastHour
+    return await blocksDb.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gt: lastHour
+          }
         }
-      }
       },
       {
         $project: {
           _id: 1,
           decimalGasUsed: 1,
           createdAt: 1,
-          "createdAt_Hours": { $hour: "$createdAt" }
+          createdAt_Hours: { $hour: '$createdAt' }
         }
       },
       {
@@ -35,27 +36,27 @@ async function aggregateLastHour(){
       },
       {
         $sort: {
-          _id : -1
+          _id: -1
         }
       }]
-    ).toArray();
-  }
-  catch (e){
-    console.log(e);
+    ).toArray()
+  } catch (e) {
+    console.log(e)
   }
 }
 
-async function aggregate4weeks(){
+async function aggregate4Weeks () {
   try {
-    if(!client.isConnected()){await client.connect()}
+    if (!client.isConnected()) { await client.connect() }
     const database = client.db('BlocksDB')
-    const blocks_db = database.collection('blocks')
+    const blocksDb = database.collection('blocks')
 
-    let lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth()-1);
+    const lastMonth = new Date()
+    lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-    return await blocks_db.aggregate([
-      { $match: {
+    return await blocksDb.aggregate([
+      {
+        $match: {
           createdAt: {
             $gt: lastMonth
           }
@@ -66,7 +67,7 @@ async function aggregate4weeks(){
           _id: 1,
           decimalGasUsed: 1,
           createdAt: 1,
-          "createdAt_Hours": { $week: "$createdAt" }
+          createdAt_Hours: { $week: '$createdAt' }
         }
       },
       {
@@ -77,15 +78,14 @@ async function aggregate4weeks(){
       },
       {
         $sort: {
-          _id : -1
+          _id: -1
         }
       }]
-    ).toArray();
-  }
-  catch (e){
-    console.log(e);
+    ).toArray()
+  } catch (e) {
+    console.log(e)
   }
 }
 
-exports.aggregateLastHour = aggregateLastHour;
-exports.aggregate30Days = aggregate4weeks;
+exports.aggregateLastHour = aggregateLastHour
+exports.aggregate30Days = aggregate4Weeks

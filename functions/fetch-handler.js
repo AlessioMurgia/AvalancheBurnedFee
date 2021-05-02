@@ -5,21 +5,24 @@ const myHeaders = new fetch.Headers()
 myHeaders.append('Content-Type', 'application/json')
 myHeaders.append('Cookie', '__cfduid=dc54cddb51676178e2e860c64b93b8b0d1616974601; AWSALB=4xaiktDhKcfAT6Fhfx1ruQQHaOvcxnlH8PSFo6W+uoqHuMzgBVixw98DgaQrqfeLqicIzfvaQ33D7jdJMdySdM6JyF+H/amnLKMkzJMeM+9jJxAx70My0CUVdIDX; AWSALBCORS=4xaiktDhKcfAT6Fhfx1ruQQHaOvcxnlH8PSFo6W+uoqHuMzgBVixw98DgaQrqfeLqicIzfvaQ33D7jdJMdySdM6JyF+H/amnLKMkzJMeM+9jJxAx70My0CUVdIDX')
 
+// endpoint url
+const url = 'https://api.avax.network/ext/bc/C/rpc'
+
 // fetching last block
 async function fetchBlock () {
   // raw var body request
-  const RawLastBlockNumber = JSON.stringify({ jsonrpc: '2.0', method: 'eth_blockNumber', params: [], id: 1 })
+  const rawLastBlockNumber = JSON.stringify({ jsonrpc: '2.0', method: 'eth_blockNumber', params: [], id: 1 })
 
   // block height request
-  const RequestOptionsLastBlockNumber = {
+  const requestOptionsLastBlockNumber = {
     method: 'POST',
     headers: myHeaders,
-    body: RawLastBlockNumber,
+    body: rawLastBlockNumber,
     redirect: 'follow'
   }
 
   try {
-    const response = await fetch('https://api.avax.network/ext/bc/C/rpc', RequestOptionsLastBlockNumber)
+    const response = await fetch(url, requestOptionsLastBlockNumber)
     const nBlocco = await response.json()
     return nBlocco.result
   } catch (error) {
@@ -44,35 +47,36 @@ async function fetchTotalFeeBurned () {
     body: rawGetTotalBalance,
     redirect: 'follow'
   }
+
   try {
-    const response = await fetch('https://api.avax.network/ext/bc/C/rpc', requestOptionsTotalBalance)
-    const totalbalance = await response.json()
-    return totalbalance.result
+    const response = await fetch(url, requestOptionsTotalBalance)
+    const totalBalance = await response.json()
+    return totalBalance.result
   } catch (error) {
     console.error(error)
   }
 }
 
 // fee burned per block fetch
-async function fetchFeeBurnedPerBlock (LastBlockGathered) {
+async function fetchFeeBurnedPerBlock (lastBlockGathered) {
   // raw body fee burned per block
-  const RawFeeBurnedPerBlock = JSON.stringify({
+  const rawFeeBurnedPerBlock = JSON.stringify({
     jsonrpc: '2.0',
     method: 'eth_getBlockByNumber',
-    params: [LastBlockGathered, true],
+    params: [lastBlockGathered, true],
     id: 1
   })
 
   // var for request fee burned per block
-  const RequestOptionsFeeBurnedPerBlock = {
+  const requestOptionsFeeBurnedPerBlock = {
     method: 'POST',
     headers: myHeaders,
-    body: RawFeeBurnedPerBlock,
+    body: rawFeeBurnedPerBlock,
     redirect: 'follow'
   }
 
   try {
-    const response = await fetch('https://api.avax.network/ext/bc/C/rpc', RequestOptionsFeeBurnedPerBlock)
+    const response = await fetch(url, requestOptionsFeeBurnedPerBlock)
     const blockDescription = await response.json()
     return blockDescription.result
   } catch (error) {
