@@ -11,7 +11,7 @@ async function redisManager () {
     })
 
     const last24h = await aggregation.aggregateLastHour()
-    const last4w = await aggregation.aggregate30Days()
+    // const last4w = await aggregation.aggregate30Days()
     let lastDay = 0
     let total30d = 0
 

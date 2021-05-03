@@ -1,10 +1,10 @@
 const fastify = require('fastify')()
 const resolve = require('path').resolve
-const redis = require('redis')
+//const redis = require('redis')
 const path = require('path')
 const dbHandler = require('./functions/db-handler')
 
-const clientRedis = redis.createClient()
+//const clientRedis = redis.createClient()
 
 fastify.register(require('point-of-view'), {
   engine: {
@@ -39,6 +39,6 @@ fastify.listen(3000, err => {
   // noinspection JSUnresolvedVariable
   console.log(`server listening on ${fastify.server.address().port}`)
 })
-clientRedis.on('error', function (error) {
-  console.error(error)
-})
+//clientRedis.on('error', function (error) {
+  //console.error(error)
+//})

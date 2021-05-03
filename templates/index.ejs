@@ -12,12 +12,9 @@
 
     <% blocks.forEach(function (block){ %>
 
-                <dt><strong>Block <%= parseInt(block.block.number, 16) %></strong></dt>
-                <dd><strong>Gas burned: </strong><%= parseInt(block.block.gasUsed, 16)* 0.000000225 + " Avax" %> </dd>
-                <dd><strong>Gas used: </strong><%= parseInt(block.block.gasUsed, 16)  + " Gas" %></dd>
-                <dd><strong>TimeStamp: </strong><%= parseInt(block.block.timestamp, 16)%></dd>
-
-
+                <dt><strong>Block <%= block.height %></strong></dt>
+                <dd><strong>Gas burned: </strong><%= parseInt(block.gasUsed, 16)* 0.000000225 + " Avax" %> </dd>
+                <dd><strong>Gas used: </strong><%= parseInt(block.gasUsed, 16)  + " Gas" %></dd>
     <% }); %>
 
 </dl>

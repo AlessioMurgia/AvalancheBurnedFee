@@ -9,7 +9,6 @@
     "mongodb": "^3.6.6",
     "node-fetch": "^2.6.1",
     "point-of-view": "^4.14.0",
-    "redis": "^3.1.2",
-    "standard": "*"
+    "redis": "^3.1.2"
   }
 }

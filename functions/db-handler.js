@@ -10,12 +10,12 @@ async function insertBlock (block) {
     // Connect to the MongoDB cluster
     if (!client.isConnected()) { await client.connect() }
 
-    const database = client.db('BlocksDB')
-    const blocksDb = database.collection('blocks')
+    const database = await client.db('BlocksDB')
+    const blocksDb = await database.collection('blocks')
     // noinspection JSUnresolvedVariable
-    await blocksDb.insertOne({ block: block, decimalGasUsed: parseInt(block.gasUsed, 16), createdAt: new Date(Date.now()) })
-  } catch (e) {
-    console.error(e)
+    await blocksDb.insertOne({ height: parseInt(block.number, 16), gasUsed: parseInt(block.gasUsed, 16), createdAt: new Date(Date.now()) })
+  } catch (ignore) {
+    console.log('error DB')
   }
 }
 
@@ -26,7 +26,7 @@ async function insertBalance (totalBalance, lastBlock) {
 
     const database = client.db('BlocksDB')
     const balanceDb = database.collection('totalBalances')
-    await balanceDb.insertOne({ _id: lastBlock, balance: totalBalance })
+    await balanceDb.insertOne({ blockNumber: lastBlock, balance: totalBalance })
   } catch (e) {
     console.error(e)
   }

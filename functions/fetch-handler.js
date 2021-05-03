@@ -3,7 +3,7 @@ const myHeaders = new fetch.Headers()
 
 // headers list
 myHeaders.append('Content-Type', 'application/json')
-myHeaders.append('Cookie', '__cfduid=dc54cddb51676178e2e860c64b93b8b0d1616974601; AWSALB=4xaiktDhKcfAT6Fhfx1ruQQHaOvcxnlH8PSFo6W+uoqHuMzgBVixw98DgaQrqfeLqicIzfvaQ33D7jdJMdySdM6JyF+H/amnLKMkzJMeM+9jJxAx70My0CUVdIDX; AWSALBCORS=4xaiktDhKcfAT6Fhfx1ruQQHaOvcxnlH8PSFo6W+uoqHuMzgBVixw98DgaQrqfeLqicIzfvaQ33D7jdJMdySdM6JyF+H/amnLKMkzJMeM+9jJxAx70My0CUVdIDX')
+myHeaders.append('Cookie', '__cfduid=d08342a4c282ced3bbf42cd7ad23290221620065613; AWSALB=G7M+Y4eeDq1ThziE+TpqcFeUZKZMt8/Z3EwL9hrBpdx1bZa67p3vw8CIrYcawKvfjQj/o6uO8QihPe4v71RW0VQzQiu6/bgZatES3Co+u3TH6kb8IcUexuAixyoh; AWSALBCORS=G7M+Y4eeDq1ThziE+TpqcFeUZKZMt8/Z3EwL9hrBpdx1bZa67p3vw8CIrYcawKvfjQj/o6uO8QihPe4v71RW0VQzQiu6/bgZatES3Co+u3TH6kb8IcUexuAixyoh')
 
 // endpoint url
 const url = 'https://api.avax.network/ext/bc/C/rpc'
@@ -11,11 +11,16 @@ const url = 'https://api.avax.network/ext/bc/C/rpc'
 // fetching last block
 async function fetchBlock () {
   // raw var body request
-  const rawLastBlockNumber = JSON.stringify({ jsonrpc: '2.0', method: 'eth_blockNumber', params: [], id: 1 })
+  const rawLastBlockNumber = JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'eth_blockNumber',
+    params: [],
+    id: 1
+  })
 
   // block height request
   const requestOptionsLastBlockNumber = {
-    method: 'POST',
+    method: 'OPTIONS',
     headers: myHeaders,
     body: rawLastBlockNumber,
     redirect: 'follow'
@@ -23,10 +28,10 @@ async function fetchBlock () {
 
   try {
     const response = await fetch(url, requestOptionsLastBlockNumber)
-    const nBlocco = await response.json()
-    return nBlocco.result
-  } catch (error) {
-    console.error(error)
+    const nBlock = await response.json()
+    return await nBlock.result
+  } catch (ignore) {
+    console.log('error fetch')
   }
 }
 
@@ -42,7 +47,7 @@ async function fetchTotalFeeBurned () {
 
   // total balance request
   const requestOptionsTotalBalance = {
-    method: 'POST',
+    method: 'OPTIONS',
     headers: myHeaders,
     body: rawGetTotalBalance,
     redirect: 'follow'
@@ -51,7 +56,7 @@ async function fetchTotalFeeBurned () {
   try {
     const response = await fetch(url, requestOptionsTotalBalance)
     const totalBalance = await response.json()
-    return totalBalance.result
+    return await totalBalance.result
   } catch (error) {
     console.error(error)
   }
@@ -69,7 +74,7 @@ async function fetchFeeBurnedPerBlock (lastBlockGathered) {
 
   // var for request fee burned per block
   const requestOptionsFeeBurnedPerBlock = {
-    method: 'POST',
+    method: 'OPTIONS',
     headers: myHeaders,
     body: rawFeeBurnedPerBlock,
     redirect: 'follow'
@@ -78,7 +83,7 @@ async function fetchFeeBurnedPerBlock (lastBlockGathered) {
   try {
     const response = await fetch(url, requestOptionsFeeBurnedPerBlock)
     const blockDescription = await response.json()
-    return blockDescription.result
+    return await blockDescription.result
   } catch (error) {
     console.error(error)
   }
