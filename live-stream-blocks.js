@@ -5,57 +5,70 @@ const aggregationHandler = require('./functions/aggregation')
 
 // last block gathered
 let lastBlockGathered
-let lastBlockGathered2
-let lastBlockGathered3
+
+// initialize last block data
+let blockDescription
 
 // first block gathered
 let firstBlockGathered
 
-// write first block only once
+// total gas burned
+let totalBalance
+
+// first start
 let firstStart = false
 
 // main function
 const liveStreamBlockFunc = async () => {
   try {
-    // awaiting previous responses
-    const lastBlock = await fetchHandler.fetchBlock()
-    const totalBalance = await fetchHandler.fetchTotalFeeBurned()
-
+    // only in first start
     if (!firstStart) {
-      firstBlockGathered = lastBlock
-      firstStart = true
-    }
+      // fetch functions
+      const firstBlock = await fetchHandler.fetchBlock()
+      totalBalance = await fetchHandler.fetchTotalFeeBurned()
+      blockDescription = await fetchHandler.fetchFeeBurnedPerBlock(firstBlock)
 
-    // new blocks filter
-    if (lastBlockGathered !== lastBlock && lastBlockGathered2 !== lastBlock && lastBlockGathered3 !== lastBlock) {
-      lastBlockGathered3 = lastBlockGathered2
-      lastBlockGathered2 = lastBlockGathered
-      lastBlockGathered = lastBlock
-      console.log('Block height: ' + parseInt(lastBlock, 16))
-
-      // call persistence manager
-      await persistenceHandler.persistenceManager(firstBlockGathered,
-        lastBlockGathered)
-
-      // Fee burned per block call
-      const blockDescription = await fetchHandler.fetchFeeBurnedPerBlock(
-        lastBlockGathered)
-
-      // Insert Block with the description
+      // DB routine
+      await persistenceHandler.persistenceManager(firstBlock, firstBlock)
       await dbHandler.insertBlock(blockDescription, totalBalance)
 
-      // insert in mongodb
-      // await dbHandler.insertBalance(totalBalance, lastBlockGathered)
+      // initialize first aggregation (partial data)
+      setTimeout(()=>aggregationHandler.aggregateLastHour(), 60000)
+      setTimeout(()=>aggregationHandler.aggregateLastDay(), 60000)
+      setTimeout(()=>aggregationHandler.aggregateLastMonth(), 60000)
+
+      console.log('Block height: ' + parseInt(firstBlock, 16))
+
+      firstBlockGathered = firstBlock
+      lastBlockGathered = firstBlock
+      firstStart = true
+    } else {
+      // set undefined block description
+      blockDescription = undefined
+
+      // get last blocks in a iterative way rejecting all the undefined description due to still non-existing block
+      while (blockDescription === undefined) {
+        blockDescription = await fetchHandler.fetchFeeBurnedPerBlock(
+          '0x' + (parseInt(lastBlockGathered, 16) + 1).toString(16))
+      }
+
+      // redefine the last block gathered number
+      lastBlockGathered = blockDescription.number
+
+      // fetch functions
+      totalBalance = await fetchHandler.fetchTotalFeeBurned()
+
+      // DB routine
+      await persistenceHandler.persistenceManager(firstBlockGathered, lastBlockGathered)
+      await dbHandler.insertBlock(blockDescription, totalBalance)
+
+      console.log('Block height: ' + parseInt(lastBlockGathered, 16))
     }
-  } catch (ignore) {
-    console.log('error func')
+  } catch (e) {
+    console.log(e)
   } finally {
-    // setTimeout(() => liveStreamBlockFunc(), 0)
     await liveStreamBlockFunc()
   }
 }
 
-liveStreamBlockFunc().catch((e)=>console.log(e))
-aggregationHandler.aggregateLastHour().then(() => setInterval(() => aggregationHandler.aggregateLastHour(), 1000 * 60 * 60))
-aggregationHandler.aggregateLastDay().then(() => setInterval(() => aggregationHandler.aggregateLastDay(), 1000 * 60 * 60 * 24))
-aggregationHandler.aggregateLastMonth().then(() => aggregationHandler.setInterval_(() => aggregationHandler.aggregateLastMonth(), 1000 * 60 * 60 * 24 * 30))
+liveStreamBlockFunc().catch((e) => console.log(e))

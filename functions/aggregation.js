@@ -1,9 +1,10 @@
 const { MongoClient } = require('mongodb')
 const connectionString = require('../connection-string')
-const redisManager = require('../redis-manager')
+const redisManager = require('./redis-manager')
 
 const client = new MongoClient(connectionString.uri, { useNewUrlParser: true, useUnifiedTopology: true })
 
+// wrapper for setInterval function
 function setInterval_ (fn, delay) {
   const maxDelay = Math.pow(2, 31) - 1
 
@@ -19,6 +20,7 @@ function setInterval_ (fn, delay) {
   return setTimeout.apply(undefined, arguments)
 }
 
+// aggregate last hour
 async function aggregateLastHour () {
   try {
     if (!client.isConnected()) { await client.connect() }
@@ -62,8 +64,12 @@ async function aggregateLastHour () {
   } catch (ignore) {
     console.log(ignore)
   }
+  finally {
+    setInterval(() => aggregateLastHour(), 1000 * 60 * 60)
+  }
 }
 
+// aggregate last day
 async function aggregateLastDay () {
   try {
     if (!client.isConnected()) { await client.connect() }
@@ -105,9 +111,12 @@ async function aggregateLastDay () {
     await redisManager.redisSetDay(date.getFullYear(), date.getMonth() + 1, aggregation[0]._id, aggregation[0].total)
   } catch (e) {
     console.log(e)
+  } finally {
+    setInterval(() => aggregateLastDay(), 1000 * 60 * 60 * 24)
   }
 }
 
+// aggregate last month
 async function aggregateLastMonth () {
   try {
     if (!client.isConnected()) { await client.connect() }
@@ -149,6 +158,8 @@ async function aggregateLastMonth () {
     await redisManager.redisSetMonth(date.getFullYear(), aggregation[0]._id, aggregation[0].total)
   } catch (e) {
     console.log(e)
+  }finally {
+    setInterval_(() => aggregateLastMonth(), 1000 * 60 * 60 * 24 * 30)
   }
 }
 

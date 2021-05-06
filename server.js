@@ -2,7 +2,7 @@ const fastify = require('fastify')()
 const resolve = require('path').resolve
 const path = require('path')
 const dbHandler = require('./functions/db-handler')
-const redisManager = require('./redis-manager')
+const redisManager = require('./functions/redis-manager')
 
 fastify.register(require('point-of-view'), {
   engine: {
