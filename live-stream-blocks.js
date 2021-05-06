@@ -32,10 +32,10 @@ const liveStreamBlockFunc = async () => {
       await persistenceHandler.persistenceManager(firstBlock, firstBlock)
       await dbHandler.insertBlock(blockDescription, totalBalance)
 
-      // initialize first aggregation (partial data)
-      setTimeout(()=>aggregationHandler.aggregateLastHour(), 60000)
-      setTimeout(()=>aggregationHandler.aggregateLastDay(), 60000)
-      setTimeout(()=>aggregationHandler.aggregateLastMonth(), 60000)
+      // initialize first aggregations (partial data)
+      setTimeout(() => aggregationHandler.aggregateLastHour(), 60000)
+      setTimeout(() => aggregationHandler.aggregateLastDay(), 60000)
+      setTimeout(() => aggregationHandler.aggregateLastMonth(), 60000)
 
       console.log('Block height: ' + parseInt(firstBlock, 16))
 

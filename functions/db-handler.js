@@ -1,6 +1,5 @@
 const { MongoClient } = require('mongodb')
 const connectionString = require('../connection-string')
-const fetchHandler = require('./fetch-handler')
 
 // define client mongodb
 const client = new MongoClient(connectionString.uri, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -14,10 +13,8 @@ async function insertBlock (block, totalBalance) {
     const database = await client.db('BlocksDB')
     const blocksDb = await database.collection('blocks')
     await blocksDb.insertOne({ height: parseInt(block.number, 16), gasUsed: parseInt(block.gasUsed, 16), totalBurnedUntilNow: totalBalance, createdAt: new Date(Date.now()) })
-
   } catch (e) {
     console.log(e)
-
   }
 }
 

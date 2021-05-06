@@ -63,8 +63,7 @@ async function aggregateLastHour () {
     await redisManager.redisSetHour(date.getFullYear(), date.getMonth() + 1, date.getDate(), aggregation[0]._id, aggregation[0].total)
   } catch (ignore) {
     console.log(ignore)
-  }
-  finally {
+  } finally {
     setInterval(() => aggregateLastHour(), 1000 * 60 * 60)
   }
 }
@@ -158,7 +157,7 @@ async function aggregateLastMonth () {
     await redisManager.redisSetMonth(date.getFullYear(), aggregation[0]._id, aggregation[0].total)
   } catch (e) {
     console.log(e)
-  }finally {
+  } finally {
     setInterval_(() => aggregateLastMonth(), 1000 * 60 * 60 * 24 * 30)
   }
 }

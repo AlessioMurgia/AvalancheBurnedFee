@@ -49,13 +49,13 @@ async function redisGetHour () {
   const date = new Date()
   date.setHours(date.getHours() - 2)
   console.log(date.getFullYear())
-  console.log(date.getMonth()+1)
+  console.log(date.getMonth() + 1)
   console.log(date.getDate())
   console.log(date.getHours())
   console.log('hour:' + date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + '-' + (date.getHours()))
 
   return new Promise((resolve) => {
-    clientRedis.get('hour:' + date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + '-' + date.getHours()-1, (err, reply) => {
+    clientRedis.get('hour:' + date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + '-' + date.getHours() - 1, (err, reply) => {
       resolve(reply)
     })
   })
