@@ -1,10 +1,8 @@
 const fastify = require('fastify')()
 const resolve = require('path').resolve
-//const redis = require('redis')
 const path = require('path')
 const dbHandler = require('./functions/db-handler')
-
-//const clientRedis = redis.createClient()
+const redisManager = require('./redis-manager')
 
 fastify.register(require('point-of-view'), {
   engine: {
@@ -18,20 +16,17 @@ fastify.register(require('point-of-view'), {
 })
 
 fastify.get('/', async (req, reply) => {
-  const totalBalance = await dbHandler.lastInsertedItems('totalBalances', 1)
+  const totalBalance = await dbHandler.lastInsertedItems('blocks', 1)
   const blockList = await dbHandler.lastInsertedItems('blocks', 5)
 
   return reply.view('index.ejs', { blocks: blockList, totalBurned: totalBalance })
 })
 
 fastify.get('/aggregation', async (req, reply) => {
-  // noinspection JSUnresolvedFunction
-  await clientRedis.mget(['last_h', 'last_d', 'last_w', 'last_4w'], (err, data) => {
-    if (err) {
-      throw err
-    }
-    return reply.view('aggregation.ejs', { last_h: data[0], last_d: data[1], last_w: data[2], last_4w: data[3] })
-  })
+  const lastHour = await redisManager.redisGetHour()
+  const lastDay = await redisManager.redisGetDay()
+  const lastMonth = await redisManager.redisGetMonth()
+  return reply.view('aggregation.ejs', { last_h: lastHour, last_d: lastDay, last_m: lastMonth })
 })
 
 fastify.listen(3000, err => {
@@ -39,6 +34,3 @@ fastify.listen(3000, err => {
   // noinspection JSUnresolvedVariable
   console.log(`server listening on ${fastify.server.address().port}`)
 })
-//clientRedis.on('error', function (error) {
-  //console.error(error)
-//})

@@ -1,30 +1,85 @@
 const redis = require('redis')
-const aggregation = require('./functions/aggregation')
+// const aggregation = require('./functions/aggregation')
+// const dbHandler = require('./functions/db-handler')
 
 const clientRedis = redis.createClient()
 
-async function redisManager () {
+clientRedis.on('error', function (error) {
+  console.error(error)
+})
+
+async function redisSetHour (year, month, day, hour, burned) {
   try {
-    // noinspection JSUnresolvedFunction
-    await clientRedis.flushdb(function (err, succeeded) {
-      console.log(succeeded)
-    })
-
-    const last24h = await aggregation.aggregateLastHour()
-    // const last4w = await aggregation.aggregate30Days()
-    let lastDay = 0
-    let total30d = 0
-
-    await last4w.forEach(element => total30d = total30d + element.total)
-    await last24h.forEach(element => lastDay = lastDay + element.total)
-
-    await clientRedis.set('last_h', last24h[0].total)
-    await clientRedis.set('last_d', lastDay)
-    await clientRedis.set('last_w', last4w[0].total)
-    await clientRedis.set('last_4w', total30d)
+    // const lastHourAggregation = await dbHandler.lastInsertedItems('hours', 1)
+    const insertionStringHours = 'hour:' + year + '-' + month + '-' + day + '-' + hour
+    // inserting string hour:year-month-day-hour
+    await clientRedis.set(insertionStringHours, burned)
+  } catch (e) {
+    console.log(e)
+  }
+}
+async function redisSetDay (year, month, day, burned) {
+  try {
+    // const lastHourAggregation = await dbHandler.lastInsertedItems('hours', 1)
+    const insertionStringHours = 'hour:' + year + '-' + month + '-' + day
+    // inserting string hour:year-month-day-hour
+    await clientRedis.set(insertionStringHours, burned)
+  } catch (e) {
+    console.log(e)
+  }
+}
+/*
+async function redisSetWeek (year, month, day, burned) {
+  try {
+    //const lastHourAggregation = await dbHandler.lastInsertedItems('hours', 1)
+    const insertionStringHours = 'hour:' + year + '-' +month + '-'+day+'-'
+    //inserting string hour:year-month-day-hour
+    await clientRedis.set(insertionStringHours, burned);
+  } catch (e) {
+    console.log(e)
+  }
+} */
+async function redisSetMonth (year, month, burned) {
+  try {
+    // const lastHourAggregation = await dbHandler.lastInsertedItems('hours', 1)
+    const insertionStringHours = 'hour:' + year + '-' + month
+    // inserting string hour:year-month-day-hour
+    await clientRedis.set(insertionStringHours, burned)
   } catch (e) {
     console.log(e)
   }
 }
 
-exports.redis_manager = redisManager
+async function redisGetHour () {
+  const date = new Date()
+  date.setHours(date.getHours() - 2)
+  return new Promise((resolve) => {
+    clientRedis.get('hour:' + date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + '-' + date.getHours(), (err, reply) => {
+      resolve(reply)
+    })
+  })
+}
+
+async function redisGetDay () {
+  const date = new Date()
+  return new Promise((resolve) => {
+    clientRedis.get('hour:' + date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), (err, reply) => {
+      resolve(reply)
+    })
+  })
+}
+async function redisGetMonth () {
+  const date = new Date()
+  return new Promise((resolve) => {
+    clientRedis.get('hour:' + date.getFullYear() + '-' + (date.getMonth() + 1), (err, reply) => {
+      resolve(reply)
+    })
+  })
+}
+
+exports.redisSetHour = redisSetHour
+exports.redisSetDay = redisSetDay
+exports.redisSetMonth = redisSetMonth
+exports.redisGetHour = redisGetHour
+exports.redisGetDay = redisGetDay
+exports.redisGetMonth = redisGetMonth

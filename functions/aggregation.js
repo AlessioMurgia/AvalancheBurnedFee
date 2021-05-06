@@ -1,11 +1,28 @@
 const { MongoClient } = require('mongodb')
 const connectionString = require('../connection-string')
+const redisManager = require('../redis-manager')
 
 const client = new MongoClient(connectionString.uri, { useNewUrlParser: true, useUnifiedTopology: true })
+
+function setInterval_ (fn, delay) {
+  const maxDelay = Math.pow(2, 31) - 1
+
+  if (delay > maxDelay) {
+    const args = arguments
+    args[1] -= maxDelay
+
+    return setInterval(function () {
+      setInterval_.apply(undefined, args)
+    }, maxDelay)
+  }
+
+  return setTimeout.apply(undefined, arguments)
+}
 
 async function aggregateLastHour () {
   try {
     if (!client.isConnected()) { await client.connect() }
+
     const database = client.db('BlocksDB')
     const blocksDb = database.collection('blocks')
     const aggregationDb = database.collection('hours')
@@ -23,7 +40,7 @@ async function aggregateLastHour () {
       {
         $project: {
           _id: 1,
-          decimalGasUsed: 1,
+          gasUsed: 1,
           createdAt: 1,
           createdAt_Hours: { $hour: '$createdAt' }
         }
@@ -31,7 +48,7 @@ async function aggregateLastHour () {
       {
         $group: {
           _id: '$createdAt_Hours',
-          total: { $sum: '$decimalGasUsed' }
+          total: { $sum: '$gasUsed' }
         }
       },
       {
@@ -41,11 +58,11 @@ async function aggregateLastHour () {
       }]
     ).toArray()
     await aggregationDb.insertOne({ year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: aggregation[0]._id, burned: aggregation[0].total })
-  } catch (e) {
-    console.log(e)
+    await redisManager.redisSetHour(date.getFullYear(), date.getMonth() + 1, date.getDate(), aggregation[0]._id, aggregation[0].total)
+  } catch (ignore) {
+    console.log(ignore)
   }
 }
-// aggregateLastHour().then(()=>client.close())
 
 async function aggregateLastDay () {
   try {
@@ -67,15 +84,15 @@ async function aggregateLastDay () {
       {
         $project: {
           _id: 1,
-          decimalGasUsed: 1,
+          gasUsed: 1,
           createdAt: 1,
-          createdAt_Hours: { $dayOfMonth: '$createdAt' }
+          createdAt_Day: { $dayOfMonth: '$createdAt' }
         }
       },
       {
         $group: {
-          _id: '$createdAt_Hours',
-          total: { $sum: '$decimalGasUsed' }
+          _id: '$createdAt_Day',
+          total: { $sum: '$gasUsed' }
         }
       },
       {
@@ -85,51 +102,7 @@ async function aggregateLastDay () {
       }]
     ).toArray()
     await aggregationDb.insertOne({ year: date.getFullYear(), month: date.getMonth() + 1, day: aggregation[0]._id, burned: aggregation[0].total })
-  } catch (e) {
-    console.log(e)
-  }
-}
-
-// aggregateLastDay().then(()=>client.close())
-
-async function aggregateLastWeek () {
-  try {
-    if (!client.isConnected()) { await client.connect() }
-    const database = client.db('BlocksDB')
-    const blocksDb = database.collection('blocks')
-    const aggregationDb = database.collection('weeks')
-    const date = new Date()
-    date.setDate(date.getDate() - 7)
-
-    const aggregation = await blocksDb.aggregate([
-      {
-        $match: {
-          createdAt: {
-            $gt: date
-          }
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          decimalGasUsed: 1,
-          createdAt: 1,
-          createdAt_Hours: { $week: '$createdAt' }
-        }
-      },
-      {
-        $group: {
-          _id: '$createdAt_Hours',
-          total: { $sum: '$decimalGasUsed' }
-        }
-      },
-      {
-        $sort: {
-          _id: -1
-        }
-      }]
-    ).toArray()
-    await aggregationDb.insertOne({ year: date.getFullYear(), month: date.getMonth() + 1, dayOfWeek: aggregation[0]._id, burned: aggregation[0].total })
+    await redisManager.redisSetDay(date.getFullYear(), date.getMonth() + 1, aggregation[0]._id, aggregation[0].total)
   } catch (e) {
     console.log(e)
   }
@@ -155,15 +128,15 @@ async function aggregateLastMonth () {
       {
         $project: {
           _id: 1,
-          decimalGasUsed: 1,
+          gasUsed: 1,
           createdAt: 1,
-          createdAt_Hours: { $month: '$createdAt' }
+          createdAt_Month: { $month: '$createdAt' }
         }
       },
       {
         $group: {
-          _id: '$createdAt_Hours',
-          total: { $sum: '$decimalGasUsed' }
+          _id: '$createdAt_Month',
+          total: { $sum: '$gasUsed' }
         }
       },
       {
@@ -173,6 +146,7 @@ async function aggregateLastMonth () {
       }]
     ).toArray()
     await aggregationDb.insertOne({ year: date.getFullYear(), month: aggregation[0]._id, burned: aggregation[0].total })
+    await redisManager.redisSetMonth(date.getFullYear(), aggregation[0]._id, aggregation[0].total)
   } catch (e) {
     console.log(e)
   }
@@ -180,5 +154,5 @@ async function aggregateLastMonth () {
 
 exports.aggregateLastHour = aggregateLastHour
 exports.aggregateLastDay = aggregateLastDay
-exports.aggregateLastWeek = aggregateLastWeek
 exports.aggregateLastMonth = aggregateLastMonth
+exports.setInterval_ = setInterval_
