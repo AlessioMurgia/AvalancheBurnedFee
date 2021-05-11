@@ -29,8 +29,7 @@ async function aggregateLastHour () {
     const blocksDb = database.collection('blocks')
     const aggregationDb = database.collection('hours')
     const date = new Date()
-    date.setHours(date.getHours() - 1)
-
+    date.setHours(date.getHours() - 2)
     const aggregation = await blocksDb.aggregate([
       {
         $match: {
@@ -55,10 +54,11 @@ async function aggregateLastHour () {
       },
       {
         $sort: {
-          _id: -1
+          _id: 1
         }
       }]
     ).toArray()
+    console.log(aggregation)
     await aggregationDb.insertOne({ year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: aggregation[0]._id, burned: aggregation[0].total })
     await redisManager.redisSetHour(date.getFullYear(), date.getMonth() + 1, date.getDate(), aggregation[0]._id, aggregation[0].total)
   } catch (ignore) {
@@ -76,7 +76,7 @@ async function aggregateLastDay () {
     const blocksDb = database.collection('blocks')
     const aggregationDb = database.collection('days')
     const date = new Date()
-    date.setDate(date.getDate() - 1)
+    date.setDate(date.getDate() - 2)
 
     const aggregation = await blocksDb.aggregate([
       {
@@ -102,7 +102,7 @@ async function aggregateLastDay () {
       },
       {
         $sort: {
-          _id: -1
+          _id: 1
         }
       }]
     ).toArray()
@@ -123,7 +123,7 @@ async function aggregateLastMonth () {
     const blocksDb = database.collection('blocks')
     const aggregationDb = database.collection('months')
     const date = new Date()
-    date.setMonth(date.getMonth() - 1)
+    date.setMonth(date.getMonth() - 2)
 
     const aggregation = await blocksDb.aggregate([
       {
@@ -149,7 +149,7 @@ async function aggregateLastMonth () {
       },
       {
         $sort: {
-          _id: -1
+          _id: 1
         }
       }]
     ).toArray()
