@@ -33,9 +33,9 @@ const liveStreamBlockFunc = async () => {
       await dbHandler.insertBlock(blockDescription, totalBalance)
 
       // start aggregation routine
-      aggregationHandler.aggregateLastHour().catch((e) => console.log(e))
-      aggregationHandler.aggregateLastDay().catch((e) => console.log(e))
-      aggregationHandler.aggregateLastMonth().catch((e) => console.log(e))
+      setInterval(() => aggregationHandler.aggregateLastHour(), 1000 * 60 * 60)
+      setInterval(() => aggregationHandler.aggregateLastDay(), 1000 * 60 * 60 * 24)
+      aggregationHandler.setInterval_(() => aggregationHandler.aggregateLastMonth(), 1000 * 60 * 60 * 24 * 30)
 
       firstBlockGathered = firstBlock
       lastBlockGathered = firstBlock
@@ -59,7 +59,6 @@ const liveStreamBlockFunc = async () => {
       // DB routine
       await persistenceHandler.persistenceManager(firstBlockGathered, lastBlockGathered)
       await dbHandler.insertBlock(blockDescription, totalBalance)
-
     }
   } catch (e) {
     console.log(e)
